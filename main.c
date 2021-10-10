@@ -167,6 +167,8 @@ int main(int argc, char *argv[])
 
     }
 
+    free(origem);
+
 
     // NÃO ALTERAR A PARTIR DAQUI!
 
