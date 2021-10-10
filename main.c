@@ -2,10 +2,12 @@
 #include <stdlib.h>
 #include <string.h> // Para usar strings
 #include <time.h>
+#include <math.h>
 
 #ifdef WIN32
 #include <windows.h> // includes only in MSWindows not in UNIX
 #include "gl/glut.h"
+#include "mt64/mt64.h"
 #endif
 
 #ifdef __APPLE__
@@ -34,6 +36,7 @@ typedef struct
 void load(char *name, Img *pic);
 void valida();
 int cmp(const void *elem1, const void *elem2);
+double colourDistance(RGB e1, RGB e2);
 
 // Funções da interface gráfica e OpenGL
 void init();
@@ -114,7 +117,7 @@ int main(int argc, char *argv[])
     gluOrtho2D(0.0, width, height, 0.0);
     glMatrixMode(GL_MODELVIEW);
 
-    srand(time(0)); // Inicializa gerador aleatório (se for usar random)
+    init_genrand64(time(0));
 
     printf("Processando...\n");
 
@@ -123,22 +126,47 @@ int main(int argc, char *argv[])
     int tam = pic[ORIGEM].width * pic[ORIGEM].height;
     memcpy(pic[SAIDA].img, pic[ORIGEM].img, sizeof(RGB) * tam);
 
-    //
-    // Neste ponto, voce deve implementar o algoritmo!
-    // (ou chamar funcoes para fazer isso)
-    //
-    // Aplica o algoritmo e gera a saida em pic[SAIDA].img...
-    // ...
-    // ...
-    //
-    // Exemplo de manipulação: inverte as cores na imagem de saída
-    /*
-	for(int i=0; i<tam; i++) {
-        pic[SAIDA].img[i].r = 255 - pic[SAIDA].img[i].r;
-        pic[SAIDA].img[i].g = 255 - pic[SAIDA].img[i].g;
-        pic[SAIDA].img[i].b = 255 - pic[SAIDA].img[i].b;
+    //ALGORITMO
+
+    RGB *origem;
+    origem = malloc(tam*sizeof(RGB));
+    memcpy(origem, pic[ORIGEM].img, sizeof(RGB) * tam);
+
+    for(int i=0; i<tam; i++) 
+    {
+
+        int tam2 = tam - i;
+        RGB imgDesejada = pic[DESEJ].img[i];
+        RGB pixelRandom;
+        RGB pixelProximo;
+        int indexAtual;
+
+        for(int j=0; j<1000; j++)
+        {
+            
+            unsigned long long random = genrand64_int64() % (tam2); 
+            pixelRandom = origem[random];
+
+            double proximoAtual = sqrt(pow((imgDesejada.r-pixelProximo.r),2) + pow((imgDesejada.g-pixelProximo.g),2) + pow((imgDesejada.b-pixelProximo.b),2));
+            double proximoNovo = sqrt(pow((imgDesejada.r-pixelRandom.r),2) + pow((imgDesejada.g-pixelRandom.g),2) + pow((imgDesejada.b-pixelRandom.b),2));
+
+            
+            if(proximoNovo<=proximoAtual || j==0)
+            {
+               pixelProximo = pixelRandom;
+               indexAtual = random;
+            }
+
+        }
+
+        for(int k=indexAtual;k<tam;k++){
+            origem[k] = origem[k+1];
+        }
+        
+        pic[SAIDA].img[i] = pixelProximo;
+
     }
-    */
+
 
     // NÃO ALTERAR A PARTIR DAQUI!
 

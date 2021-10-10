@@ -1,7 +1,7 @@
 # Makefile para Windows
 
 PROG = transition.exe
-FONTES = main.c lib/SOIL/SOIL.c lib/SOIL/image_DXT.c lib/SOIL/image_helper.c lib/SOIL/stb_image_aug.c 
+FONTES = main.c lib/SOIL/SOIL.c lib/SOIL/image_DXT.c lib/SOIL/image_helper.c lib/SOIL/stb_image_aug.c include/MT64/mt19937-64.c 
 OBJETOS = $(FONTES:.c=.o)
 CFLAGS = -O3 -g -Iinclude # -Wall -g  # Todas as warnings, infos de debug
 
