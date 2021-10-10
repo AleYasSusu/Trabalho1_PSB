@@ -36,7 +36,6 @@ typedef struct
 void load(char *name, Img *pic);
 void valida();
 int cmp(const void *elem1, const void *elem2);
-double colourDistance(RGB e1, RGB e2);
 
 // Funções da interface gráfica e OpenGL
 void init();
