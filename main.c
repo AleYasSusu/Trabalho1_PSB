@@ -1,13 +1,17 @@
+//LINK REPOSITÓRIO --> https://github.com/AleYasSusu/Trabalho1_PSB
+//ACADÊMICOS --> Alessandro Borges de Souza e Henrique Baptista de Oliveira
+//DISCIPLINA --> 46526-02 - Programação de Software Básico - Turma 031 - 2021/2 - Prof. Marcelo Cohen
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h> // Para usar strings
 #include <time.h>
 #include <math.h>
+#include "mt64/mt64.h"
 
 #ifdef WIN32
 #include <windows.h> // includes only in MSWindows not in UNIX
 #include "gl/glut.h"
-#include "mt64/mt64.h"
 #endif
 
 #ifdef __APPLE__
@@ -116,6 +120,8 @@ int main(int argc, char *argv[])
     gluOrtho2D(0.0, width, height, 0.0);
     glMatrixMode(GL_MODELVIEW);
 
+    //Inicialização do gerador de grandes números aleatórios (MT19937-64) --> http://www.math.sci.hiroshima-u.ac.jp/m-mat/MT/emt64.html
+    //Substituição do SRAND pelo GENRAND64 feita pelo grupo
     init_genrand64(time(0));
 
     printf("Processando...\n");
@@ -125,49 +131,56 @@ int main(int argc, char *argv[])
     int tam = pic[ORIGEM].width * pic[ORIGEM].height;
     memcpy(pic[SAIDA].img, pic[ORIGEM].img, sizeof(RGB) * tam);
 
-    //ALGORITMO
+    //INÍCIO DO ALGORITMO --> PARTE DESENVOLVIDA PELO GRUPO
+    //Algoritmo continua a tentar fazer trocas até que após uma sequência de 3000 tentativas não consiga uma única troca vantajosa
 
-    RGB *origem;
-    origem = malloc(tam*sizeof(RGB));
-    memcpy(origem, pic[ORIGEM].img, sizeof(RGB) * tam);
-
-    for(int i=0; i<tam; i++) 
+    int sequenciaTentativaFracasso = 0;
+    while(sequenciaTentativaFracasso<=3000)
     {
+        //ALGORITMO DE MAPEAMENTO DE PIXELS 1 (obtenção de posições)
+        //Geração de 2 valores aleatórios dentro do escopo da imagem (entre 0 e o número total de pixels da imagem (tamanho))
+        //Utilização dos 2 valores aleatórios como índice do vetor de pixels
+        //Criação das variáveis para armazenar a cor dos 2 pixels desejados e dos 2 pixels atuais
 
-        int tam2 = tam - i;
-        RGB imgDesejada = pic[DESEJ].img[i];
-        RGB pixelRandom;
-        RGB pixelProximo;
-        int indexAtual;
+        unsigned long long randomA = genrand64_int64() % (tam);
+        unsigned long long randomB = genrand64_int64() % (tam);
 
-        for(int j=0; j<1000; j++)
-        {
-            
-            unsigned long long random = genrand64_int64() % (tam2); 
-            pixelRandom = origem[random];
+        RGB pixelDesejadoA = pic[DESEJ].img[randomA];
+        RGB pixelDesejadoB = pic[DESEJ].img[randomB];
+        RGB pixelCorA = pic[SAIDA].img[randomA];
+        RGB pixelCorB = pic[SAIDA].img[randomB];
 
-            double proximoAtual = sqrt(pow((imgDesejada.r-pixelProximo.r),2) + pow((imgDesejada.g-pixelProximo.g),2) + pow((imgDesejada.b-pixelProximo.b),2));
-            double proximoNovo = sqrt(pow((imgDesejada.r-pixelRandom.r),2) + pow((imgDesejada.g-pixelRandom.g),2) + pow((imgDesejada.b-pixelRandom.b),2));
+        //ALGORITMO DE COMPARAÇÃO DE PIXELS
+        //Comparação da distância dos pixels através da fórmula da distância euclidiana (tridimensional [R,G,B]) --> https://pt.wikipedia.org/wiki/Dist%C3%A2ncia_euclidiana
 
-            
-            if(proximoNovo<=proximoAtual || j==0)
-            {
-               pixelProximo = pixelRandom;
-               indexAtual = random;
-            }
+        //Distância de PixelCorA (PCA) até PixelDesejadoA (PDA)
+        double distPCA_PDA = sqrt(pow((pixelDesejadoA.r-pixelCorA.r),2) + pow((pixelDesejadoA.g-pixelCorA.g),2) + pow((pixelDesejadoA.b-pixelCorA.b),2));
 
+        //Distância de PixelCorA (PCA) até PixelDesejadoB (PDB)
+        double distPCA_PDB = sqrt(pow((pixelDesejadoB.r-pixelCorA.r),2) + pow((pixelDesejadoB.g-pixelCorA.g),2) + pow((pixelDesejadoB.b-pixelCorA.b),2));
+
+        //Distância de PixelCorB (PCB) até PixelDesejadoA (PDA)
+        double distPCB_PDA = sqrt(pow((pixelDesejadoA.r-pixelCorB.r),2) + pow((pixelDesejadoA.g-pixelCorB.g),2) + pow((pixelDesejadoA.b-pixelCorB.b),2));
+
+        //Distância de PixelCorB (PCB) até PixelDesejadoB (PDB)
+        double distPCB_PDB = sqrt(pow((pixelDesejadoB.r-pixelCorB.r),2) + pow((pixelDesejadoB.g-pixelCorB.g),2) + pow((pixelDesejadoB.b-pixelCorB.b),2));
+
+        //ALGORITMO DE MAPEAMENTO DE PIXELS 2 (troca de posições)
+        //Se a troca de pixels for vantajosa, troca os pixels de posição (A no lugar de B e B no lugar de A) e zera a sequência de fracassos
+        //Caso a troca não seja vantajosa, se acresenta uma tentativa fracassada na sequência de fracassos
+
+        if(distPCA_PDB<distPCB_PDA && distPCB_PDA<distPCA_PDA){
+            RGB aux = pic[SAIDA].img[randomA];
+            pic[SAIDA].img[randomA] = pic[SAIDA].img[randomB];
+            pic[SAIDA].img[randomB] = aux;
+            sequenciaTentativaFracasso = 0; 
         }
-
-        for(int k=indexAtual;k<tam;k++){
-            origem[k] = origem[k+1];
-        }
-        
-        pic[SAIDA].img[i] = pixelProximo;
-
+        else{
+            sequenciaTentativaFracasso++;
+        }         
     }
 
-    free(origem);
-
+    //FIM DO ALGORITMO --> PARTE DESENVOLVIDA PELO GRUPO
 
     // NÃO ALTERAR A PARTIR DAQUI!
 
